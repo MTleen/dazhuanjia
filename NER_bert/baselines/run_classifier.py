@@ -99,6 +99,8 @@ def main():
 
     args = parser.parse_args()
 
+    os.chdir('./NER_bert')
+    print(os.getcwd())
     if not os.path.exists(args.output_dir):
         os.mkdir(args.output_dir)
     args.output_dir = os.path.join(args.output_dir, args.task_name)

@@ -81,11 +81,32 @@ def ee_commit_prediction(dataset, preds, output_dir):
     orig_text = dataset.orig_text
 
     pred_result = []
+    pred_res_dict = {}
     for item in zip(orig_text, preds):
-        tmp_dict = {'text': item[0], 'entities': item[1]}
-        pred_result.append(tmp_dict)
+        hash_val = item[0]['hash']
+        tmp_dict = {'text': item[0]['text'], 'entities': item[1]}
+        if hash_val in pred_res_dict.keys():
+            pred_res_dict[hash_val]['text'] += tmp_dict['text']
+            pred_res_dict[hash_val]['entities'] += tmp_dict['entities']
+        else:
+            pred_res_dict[hash_val] = tmp_dict
+    # pred_result.append(tmp_dict)
+    pred_result = list(pred_res_dict.values())
     with open(os.path.join(output_dir, 'CMeEE_test.json'), 'w', encoding='utf-8') as f:
         f.write(json.dumps(pred_result, indent=2, ensure_ascii=False))
+
+    # 输出主客体
+    re_res = {'text':'', 'sub_list': [], 'obj_list': []}
+    for l in pred_result:
+        re_res['text'] = l['text']
+        for e in l['entities']:
+            re_res['sub_list'].append(e['entity'])
+            re_res['obj_list'].append(e['entity'])
+
+    with open(os.path.join(output_dir, 'NER_test1.json'),
+              'w',
+              encoding='utf-8') as f:
+        f.write(json.dumps(re_res, indent=2, ensure_ascii=False))
 
 
 def cdn_commit_prediction(text, preds, num_preds, recall_labels, recall_scores, output_dir, id2label):

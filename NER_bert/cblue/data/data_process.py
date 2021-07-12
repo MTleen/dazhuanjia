@@ -58,7 +58,7 @@ class EEDataProcessor(object):
         data_trunc = []
         for d in datas:
             for i in range(0, len(d), self.test_max_length):
-                sub_seq = d[i, i + self.test_max_length]
+                sub_seq = d[i: i + self.test_max_length]
                 data_trunc.append({'text': sub_seq, 'hash': hash(data)})
         return data_trunc
 
@@ -73,7 +73,7 @@ class EEDataProcessor(object):
         outputs = {'text': [], 'label': [], 'orig_text': []}
         samples = load_json(path)
         for data in samples:
-            trunc_data = self._seg_text(data)
+            trunc_data = self._seg_text(data['text'])
             for data in trunc_data:
                 if self.is_lower:
                     text_a = [

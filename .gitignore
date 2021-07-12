@@ -6,6 +6,11 @@ __pycache__/
 # C extensions
 *.so
 
+NER_bert/data/*
+NER_bert/CBLUEDatasets/*
+NER_bert/resources
+.DS_Store
+
 # Distribution / packaging
 .Python
 build/

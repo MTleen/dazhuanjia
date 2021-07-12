@@ -1,0 +1,26 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "ee_predict",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/NER_bert/baselines/run_classifier.py",
+            "console": "integratedTerminal",
+            "python": "/Users/hushengxiang/anaconda3/envs/torch/bin/python",
+            "args": ["--data_dir", "CBLUEDatasets", "--model_type", "roberta", "--model_name", "roberta-wwm-ext", "--model_dir", "data/model_data", "--task_name", "ee", "--output_dir", "data/output", "--result_output_dir", "data/result_output", "--do_predict", "--max_length", "128", "--eval_batch_size", "32", "--seed", "2021"],
+        },
+        {
+            "name": "ee_train",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/NER_bert/baselines/run_classifier.py",
+            "console": "integratedTerminal",
+            "python": "/Users/hushengxiang/anaconda3/envs/torch/bin/python",
+            "args": ["--data_dir", "CBLUEDatasets", "--model_type", "roberta", "--model_name", "roberta-wwm-ext", "--model_dir", "data/model_data", "--task_name", "ee", "--output_dir", "data/output", "--result_output_dir", "data/result_output", "--do_train", "--max_length", "128", "--train_batch_size", "1", "--eval_batch_size", "32", "--learning_rate", "4e-5", "--epochs", "2", "--warmup_proportion", "0.1", "--earlystop_patience", "3", "--logging_steps", "1", "--save_steps", "1", "--seed", "2021"],
+        }
+    ]
+}

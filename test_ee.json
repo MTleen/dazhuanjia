@@ -1,0 +1,35 @@
+{
+    "text": "患者以反复上腹部隐痛不适五余年，再发两天入院，查体，生命体征平稳，心肺部听诊无异常，腹平坦，腹软，上腹部压痛+，以剑突下为主，无反复痛，墨菲氏征阴性，肠鸣音正常，四肢力正常，肌张力正常，余无异常。",
+    "entities": [
+        {
+            "start_idx": 26,
+            "end_idx": 27,
+            "type": "sym",
+            "entity": "发热"
+        },
+        {
+            "start_idx": 29,
+            "end_idx": 30,
+            "type": "sym",
+            "entity": "咳嗽"
+        },
+        {
+            "start_idx": 32,
+            "end_idx": 34,
+            "type": "sym",
+            "entity": "热峰高"
+        },
+        {
+            "start_idx": 36,
+            "end_idx": 44,
+            "type": "sym",
+            "entity": "腋温多在39℃以上"
+        },
+        {
+            "start_idx": 46,
+            "end_idx": 47,
+            "type": "sym",
+            "entity": "发热"
+        }
+    ]
+}

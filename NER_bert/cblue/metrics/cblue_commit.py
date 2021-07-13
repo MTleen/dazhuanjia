@@ -103,7 +103,7 @@ def ee_commit_prediction(dataset, preds, output_dir):
             re_res['sub_list'].append(e['entity'])
             re_res['obj_list'].append(e['entity'])
 
-    with open(os.path.join(output_dir, 'NER_test1.json'),
+    with open(os.path.join(output_dir, 'CMeIE_test_NER.json'),
               'w',
               encoding='utf-8') as f:
         f.write(json.dumps(re_res, indent=2, ensure_ascii=False))

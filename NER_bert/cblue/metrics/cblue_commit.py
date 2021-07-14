@@ -79,34 +79,50 @@ def ctc_commit_prediction(dataset, preds, output_dir, id2label):
 
 def ee_commit_prediction(dataset, preds, output_dir):
     orig_text = dataset.orig_text
-
+    #  原始语料无需分片
+    # pred_result = []
+    # for item in zip(orig_text, preds):
+    #     tmp_dict = {'text': item[0], 'entities': item[1]}
+    #     pred_result.append(tmp_dict)
+    # 原始语料分片
     pred_result = []
     pred_res_dict = {}
     for item in zip(orig_text, preds):
         hash_val = item[0]['hash']
         tmp_dict = {'text': item[0]['text'], 'entities': item[1]}
+        # tmp_dict = {'text': item[0]['origin_text'], 'entities': item[1]}
         if hash_val in pred_res_dict.keys():
-            pred_res_dict[hash_val]['text'] += tmp_dict['text']
+            # 还原实体 idx
+            if len(tmp_dict['entities']) > 0:
+                for e in tmp_dict['entities']:
+                    e['start_idx'] += len(pred_res_dict[hash_val]['text']) + 1
+                    e['end_idx'] += len(pred_res_dict[hash_val]['text']) + 1
+
+            pred_res_dict[hash_val]['text'] += '|' + tmp_dict['text']
             pred_res_dict[hash_val]['entities'] += tmp_dict['entities']
         else:
             pred_res_dict[hash_val] = tmp_dict
+    # 将最终文本替换成原始文本
+    for item in orig_text:
+        pred_res_dict[item['hash']]['text'] = item['origin_text']
     # pred_result.append(tmp_dict)
     pred_result = list(pred_res_dict.values())
     with open(os.path.join(output_dir, 'CMeEE_test.json'), 'w', encoding='utf-8') as f:
         f.write(json.dumps(pred_result, indent=2, ensure_ascii=False))
 
     # 输出主客体
-    re_res = {'text':'', 'sub_list': [], 'obj_list': []}
-    for l in pred_result:
-        re_res['text'] = l['text']
-        for e in l['entities']:
-            re_res['sub_list'].append(e['entity'])
-            re_res['obj_list'].append(e['entity'])
-
-    with open(os.path.join(output_dir, 'CMeIE_test_NER.json'),
+    with open(os.path.join(output_dir, 'CMeEE_test_NER.json'),
               'w',
               encoding='utf-8') as f:
-        f.write(json.dumps(re_res, indent=2, ensure_ascii=False))
+        for l in pred_result:
+            re_res = {'text':'', 'sub_list': [], 'obj_list': []}
+            re_res['text'] = l['text']
+            for e in l['entities']:
+                if e['type'] == 'dis':
+                    re_res['sub_list'].append(e['entity'])
+                else:
+                    re_res['obj_list'].append(e['entity'])
+            f.write(json.dumps(re_res, ensure_ascii=False) + '\n')
 
 
 def cdn_commit_prediction(text, preds, num_preds, recall_labels, recall_scores, output_dir, id2label):

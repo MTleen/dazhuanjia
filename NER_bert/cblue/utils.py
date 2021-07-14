@@ -8,6 +8,20 @@ import logging
 import unicodedata, re
 
 
+def format_json(path):
+    with open(path, 'r', encoding='utf-8') as f:
+        lines = f.readlines()
+        target_json = []
+        for l in lines:
+            if l.strip():
+                target_json.append(json.loads(l))
+    with open(path, 'w', encoding='utf-8') as f:
+        json.dump(target_json, f, ensure_ascii=False)
+    # samples = load_json(path)
+    # with open(path, 'w', encoding='utf-8') as f:
+    #     for obj in samples:
+    #         f.write(json.dumps(obj, ensure_ascii=False) + '\n')
+
 def load_json(input_file):
     with open(input_file, 'r') as f:
         samples = json.load(f)

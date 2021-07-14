@@ -6,11 +6,11 @@ import torch
 from transformers import BertTokenizer, BertForSequenceClassification, AlbertForSequenceClassification, \
     BertForTokenClassification, AlbertForTokenClassification
 
-from NER_bert.cblue.data import STSDataProcessor, STSDataset, QICDataset, QICDataProcessor, QQRDataset, \
+from cblue.data import STSDataProcessor, STSDataset, QICDataset, QICDataProcessor, QQRDataset, \
     QQRDataProcessor, QTRDataset, QTRDataProcessor, CTCDataset, CTCDataProcessor, EEDataset, EEDataProcessor
-from NER_bert.cblue.trainer import STSTrainer, QICTrainer, QQRTrainer, QTRTrainer, CTCTrainer, EETrainer
-from NER_bert.cblue.utils import init_logger, seed_everything
-from NER_bert.cblue.models import ZenConfig, ZenNgramDict, ZenForSequenceClassification, ZenForTokenClassification
+from cblue.trainer import STSTrainer, QICTrainer, QQRTrainer, QTRTrainer, CTCTrainer, EETrainer
+from cblue.utils import init_logger, seed_everything
+from cblue.models import ZenConfig, ZenNgramDict, ZenForSequenceClassification, ZenForTokenClassification
 
 
 TASK_DATASET_CLASS = {
@@ -99,8 +99,6 @@ def main():
 
     args = parser.parse_args()
 
-    os.chdir('./NER_bert')
-    print(os.getcwd())
     if not os.path.exists(args.output_dir):
         os.mkdir(args.output_dir)
     args.output_dir = os.path.join(args.output_dir, args.task_name)
@@ -115,6 +113,8 @@ def main():
 
     logger = init_logger(os.path.join(args.output_dir, f'{args.task_name}_{args.model_name}.log'))
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    # device = torch.device('cpu')
+
     args.device = device
     seed_everything(args.seed)
 

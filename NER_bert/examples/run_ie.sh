@@ -4,7 +4,7 @@ DATA_DIR="CBLUEDatasets"
 TASK_NAME="ie"
 MODEL_TYPE="bert"
 MODEL_DIR="data/model_data"
-MODEL_NAME="chinese-bert-wwm-ext"
+MODEL_NAME="robert_base"
 OUTPUT_DIR="data/output"
 RESULT_OUTPUT_DIR="data/result_output"
 
@@ -13,7 +13,7 @@ MAX_LENGTH=128
 echo "Start running"
 
 if [ $# == 0 ]; then
-    python baselines/run_ie.py \
+    nohup python baselines/run_ie.py \
         --data_dir=${DATA_DIR} \
         --model_type=${MODEL_TYPE} \
         --model_dir=${MODEL_DIR} \
@@ -23,15 +23,15 @@ if [ $# == 0 ]; then
         --result_output_dir=${RESULT_OUTPUT_DIR} \
         --do_train \
         --max_length=${MAX_LENGTH} \
-        --train_batch_size=32 \
-        --eval_batch_size=64 \
+        --train_batch_size=16 \
+        --eval_batch_size=32 \
         --learning_rate=3e-5 \
         --epochs=7 \
         --warmup_proportion=0.1 \
         --earlystop_patience=3 \
         --logging_steps=200 \
         --save_steps=200 \
-        --seed=2021
+        --seed=2021 > log/IE_train.log 2>&1 &
 elif [ $1 == "predict" ]; then
     python baselines/run_ie.py \
         --data_dir=${DATA_DIR} \

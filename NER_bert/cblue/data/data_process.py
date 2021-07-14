@@ -1,11 +1,12 @@
 import os
 import json
 import pandas as pd
+import re
 import jieba
 import tqdm
 import numpy as np
 from gensim import corpora, models, similarities
-from NER_bert.cblue.utils import load_json, load_dict, write_dict, str_q2b
+from cblue.utils import load_json, load_dict, write_dict, str_q2b, format_json
 
 
 class EEDataProcessor(object):
@@ -54,12 +55,26 @@ class EEDataProcessor(object):
 
     def _seg_text(self, data):
         # 切分长句子
-        datas = data.split('。')
+        # datas = data.split('，')
+
+        # 直接按‘，’或者‘。’进行切分
+        # datas = re.sub(r'[，。]', '|', data).split('|')
+        # data_trunc = []
+        # for d in datas:
+        #     for i in range(0, len(d), self.test_max_length):
+        #         sub_seq = d[i: i + self.test_max_length]
+        #         data_trunc.append({'text': sub_seq, 'hash': hash(data), 'origin_text': data})
+        # 为保证语料的语义完整性，取长度小于 self.test_max_length 的语义完整的最大子串
+        sep_list = ['，', '。']
+        sep_idx = [i for i, t in enumerate(data) if t in sep_list]
+        sep_idx_mask = (np.array(sep_idx) // self.test_max_length).tolist()
         data_trunc = []
-        for d in datas:
-            for i in range(0, len(d), self.test_max_length):
-                sub_seq = d[i: i + self.test_max_length]
-                data_trunc.append({'text': sub_seq, 'hash': hash(data)})
+        start_idx = 0
+        for i in list(set(sep_idx_mask))[1:]:
+            end_idx = sep_idx[sep_idx_mask.index(i)]
+            data_trunc.append({'text': data[start_idx: end_idx], 'hash': hash(data), 'origin_text': data})
+            start_idx = end_idx + 1
+        data_trunc.append({'text': data[start_idx:], 'hash': hash(data), 'origin_text': data})
         return data_trunc
 
     def _pre_process(self, path, is_predict):
@@ -71,37 +86,46 @@ class EEDataProcessor(object):
             return data
 
         outputs = {'text': [], 'label': [], 'orig_text': []}
-        samples = load_json(path)
+        # 测试阶段先和 RE 阶段统一输入格式
+        try:
+            samples = load_json(path)
+            assert isinstance(samples, list)
+        except Exception as e:
+            format_json(path)
+            samples = load_json(path)
+
         for data in samples:
-            trunc_data = self._seg_text(data['text'])
-            for data in trunc_data:
+            if is_predict:
+                trunc_data = self._seg_text(data['text'])
+                for data in trunc_data:
+                    if self.is_lower:
+                        text_a = [
+                            "，" if t == " " or t == "\n" or t == "\t" else t
+                            for t in list(data["text"].lower())
+                        ]
+                    else:
+                        text_a = [
+                            "，" if t == " " or t == "\n" or t == "\t" else t
+                            for t in list(data["text"])
+                        ]
+                    outputs['text'].append(text_a)
+                    outputs['orig_text'].append(data)
+            else:
                 if self.is_lower:
-                    text_a = [
-                        "，" if t == " " or t == "\n" or t == "\t" else t
-                        for t in list(data["text"].lower())
-                    ]
+                    text_a = ["，" if t == " " or t == "\n" or t == "\t" else t
+                                for t in list(data["text"].lower())]
                 else:
-                    text_a = [
-                        "，" if t == " " or t == "\n" or t == "\t" else t
-                        for t in list(data["text"])
-                    ]
+                    text_a = ["，" if t == " " or t == "\n" or t == "\t" else t
+                                for t in list(data["text"])]
+                # text_a = "\002".join(text_a)
                 outputs['text'].append(text_a)
-                outputs['orig_text'].append(data)
-            # if self.is_lower:
-            #     text_a = ["，" if t == " " or t == "\n" or t == "\t" else t
-            #               for t in list(data["text"].lower())]
-            # else:
-            #     text_a = ["，" if t == " " or t == "\n" or t == "\t" else t
-            #               for t in list(data["text"])]
-            # # text_a = "\002".join(text_a)
-            # outputs['text'].append(text_a)
-            # outputs['orig_text'].append(data['text'])
-            # if not is_predict:
-            #     labels = [self.no_entity_label] * len(text_a)
-            #     for entity in data['entities']:
-            #         start_idx, end_idx, type = entity['start_idx'], entity['end_idx'], entity['type']
-            #         labels = label_data(labels, start_idx, end_idx, type)
-            #     outputs['label'].append('\002'.join(labels))
+                outputs['orig_text'].append(data['text'])
+                if not is_predict:
+                    labels = [self.no_entity_label] * len(text_a)
+                    for entity in data['entities']:
+                        start_idx, end_idx, type = entity['start_idx'], entity['end_idx'], entity['type']
+                        labels = label_data(labels, start_idx, end_idx, type)
+                    outputs['label'].append('\002'.join(labels))
         return outputs
 
     def extract_result(self, results, test_input):
@@ -859,3 +883,27 @@ class QTRDataProcessor(object):
             if not is_predict:
                 outputs['label'].append(self.label2id[sample['label']])
         return outputs
+
+def json_union(source_json_file1, source_json_file2, target_json_file):
+    with open(source_json_file1, 'r', encoding="utf-8") as f1, open(source_json_file2, 'r', encoding="utf-8") as f2, open(target_json_file, 'w', encoding="utf-8") as f3:
+        lines1 = f1.readlines()
+        lines2 = f2.readlines()
+        for line1, line2 in zip(lines1 ,lines2):
+            data1 = json.loads(line1)
+            data2 = json.loads(line2)
+            data1['sub_list'] = list(set(data1['sub_list']).union(set(data2['sub_list'])))
+            data1['obj_list'] = list(set(data1['obj_list']).union(set(data2['obj_list'])))
+            f3.write(json.dumps(data1, ensure_ascii=False) + '\n')
+
+def test_file_generate(source_json_file, target_json_file1, target_json_file2):
+    with open(source_json_file, 'r', encoding="utf-8") as f, open(target_json_file1, 'w', encoding="utf-8") as f1, open(target_json_file2, 'w', encoding="utf-8") as f2:
+        lines = f.readlines()
+        outputs = []
+        for line in lines:
+            output1 = {'text':[]}
+            output2 = {'text':[]}
+            output1['text'] = line.replace('\n', '')
+            output2['text'] = line.replace('\n', '')
+            outputs.append(output1)
+            f2.write(json.dumps(output2, ensure_ascii=False) + '\n')
+        f1.write(json.dumps(outputs, ensure_ascii=False))

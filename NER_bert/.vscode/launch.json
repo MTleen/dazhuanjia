@@ -10,7 +10,7 @@
             "request": "launch",
             "program": "${workspaceFolder}/baselines/run_classifier.py",
             "console": "integratedTerminal",
-            "python": "/home/dzj/anaconda3/envs/torch/bin/python",
+            "python": "/Users/hushengxiang/anaconda3/envs/torch/bin/python",
             "args": ["--data_dir", "CBLUEDatasets", "--model_type", "roberta", "--model_name", "roberta-wwm-ext", "--model_dir", "data/model_data", "--task_name", "ee", "--output_dir", "data/output", "--result_output_dir", "data/result_output", "--do_predict", "--max_length", "128", "--eval_batch_size", "32", "--seed", "2021"],
         },
         {

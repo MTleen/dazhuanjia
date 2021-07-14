@@ -74,7 +74,8 @@ class EEDataProcessor(object):
             end_idx = sep_idx[sep_idx_mask.index(i)]
             data_trunc.append({'text': data[start_idx: end_idx], 'hash': hash(data), 'origin_text': data})
             start_idx = end_idx + 1
-        data_trunc.append({'text': data[start_idx:], 'hash': hash(data), 'origin_text': data})
+        if start_idx < len(data):
+            data_trunc.append({'text': data[start_idx:], 'hash': hash(data), 'origin_text': data})
         return data_trunc
 
     def _pre_process(self, path, is_predict):

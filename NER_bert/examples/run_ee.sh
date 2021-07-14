@@ -11,9 +11,9 @@
 DATA_DIR="CBLUEDatasets"
 
 TASK_NAME="ee"
-MODEL_TYPE="robert"
+MODEL_TYPE="roberta"
 MODEL_DIR="data/model_data"
-MODEL_NAME="chinese_roberta_wwm_ext_pytorch"
+MODEL_NAME="roberta-wwm-ext"
 OUTPUT_DIR="data/output"
 RESULT_OUTPUT_DIR="data/result_output"
 
@@ -22,7 +22,7 @@ MAX_LENGTH=128
 echo "Start running"
 
 if [ $# == 0 ]; then
-    python baselines/run_classifier.py \
+    nohup python baselines/run_classifier.py \
         --data_dir=${DATA_DIR} \
         --model_type=${MODEL_TYPE} \
         --model_dir=${MODEL_DIR} \
@@ -32,15 +32,15 @@ if [ $# == 0 ]; then
         --result_output_dir=${RESULT_OUTPUT_DIR} \
         --do_train \
         --max_length=${MAX_LENGTH} \
-        --train_batch_size=16 \
-        --eval_batch_size=16 \
+        --train_batch_size=32 \
+        --eval_batch_size=32 \
         --learning_rate=3e-5 \
-        --epochs=5 \
+        --epochs=10 \
         --warmup_proportion=0.1 \
-        --earlystop_patience=3 \
+        --earlystop_patience=50 \
         --logging_steps=200 \
         --save_steps=200 \
-        --seed=2021
+        --seed=2021 > log/train.log 2>&1 &
 elif [ $1 == "predict" ]; then
     python baselines/run_classifier.py \
         --data_dir=${DATA_DIR} \

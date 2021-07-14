@@ -1,7 +1,7 @@
 import numpy as np
 import torch
 from torch.utils.data import Dataset
-from NER_bert.cblue.models import convert_examples_to_features_for_tokens
+from cblue.models import convert_examples_to_features_for_tokens
 
 
 class EEDataset(Dataset):

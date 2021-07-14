@@ -6,12 +6,12 @@ import torch.nn as nn
 from transformers import AdamW, get_linear_schedule_with_warmup
 from torch.utils.data import Dataset, DataLoader
 
-from NER_bert.cblue.utils import seed_everything, ProgressBar, TokenRematch
-from NER_bert.cblue.metrics import sts_metric, qic_metric, qqr_metric, qtr_metric, \
+from cblue.utils import seed_everything, ProgressBar, TokenRematch
+from cblue.metrics import sts_metric, qic_metric, qqr_metric, qtr_metric, \
     ctc_metric, ee_metric, er_metric, re_metric, cdn_cls_metric, cdn_num_metric
-from NER_bert.cblue.metrics import sts_commit_prediction, qic_commit_prediction, qtr_commit_prediction, \
+from cblue.metrics import sts_commit_prediction, qic_commit_prediction, qtr_commit_prediction, \
     qqr_commit_prediction, ctc_commit_prediction, ee_commit_prediction, cdn_commit_prediction
-from NER_bert.cblue.models import convert_examples_to_features, save_zen_model
+from cblue.models import convert_examples_to_features, save_zen_model
 
 
 class Trainer(object):
@@ -1660,6 +1660,7 @@ class RETrainer(Trainer):
 
                 new_spo_list = []
                 for spo in spo_list:
+                    print(spo)
                     if 'predicate' in spo.keys():
                         combined = True
                         for text in data['text'].split("。"):

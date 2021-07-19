@@ -52,6 +52,9 @@ def main():
                         help="The task data directory.")
     parser.add_argument("--model_dir", default=None, type=str, required=True,
                         help="The directory of pretrained models")
+    parser.add_argument("--test_file_path", default=None, type=str, required=True,
+                        help="The directory of test data")
+    parser.add_argument("--test_file_dir", default='testData', type=str, required=False, help="The directory of test data")
     parser.add_argument("--model_type", default=None, type=str, required=True,
                         help="The type of selected pretrained models.")
     parser.add_argument("--model_name", default=None, type=str, required=True,
@@ -137,7 +140,7 @@ def main():
         if args.model_type == 'zen':
             ngram_dict = ZenNgramDict(os.path.join(args.model_dir, args.model_name), tokenizer=tokenizer)
 
-        data_processor = data_processor_class(root=args.data_dir)
+        data_processor = data_processor_class(root=args.data_dir, test_file_path=args.test_file_path)
         train_samples = data_processor.get_train_sample()
         eval_samples = data_processor.get_dev_sample()
 
@@ -170,7 +173,7 @@ def main():
         if args.model_type == 'zen':
             ngram_dict = ZenNgramDict(os.path.join(args.model_dir, args.model_name), tokenizer=tokenizer)
 
-        data_processor = data_processor_class(root=args.data_dir)
+        data_processor = data_processor_class(root=args.data_dir, test_file_path=args.test_file_path, test_file_dir=args.test_file_dir)
         test_samples = data_processor.get_test_sample()
 
         if args.task_name == 'ee' or args.task_name == 'ctc':

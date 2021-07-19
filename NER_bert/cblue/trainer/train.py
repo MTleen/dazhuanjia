@@ -318,7 +318,7 @@ class EETrainer(Trainer):
         test_inputs = test_dataset.texts
         predictions = [pred[1:-1] for pred in predictions]
         predicts = self.data_processor.extract_result(predictions, test_inputs)
-        ee_commit_prediction(dataset=test_dataset, preds=predicts, output_dir=args.result_output_dir)
+        ee_commit_prediction(dataset=test_dataset, preds=predicts, output_dir=args.result_output_dir, file_name=args.test_file_path)
 
     def _save_checkpoint(self, model, step):
         output_dir = os.path.join(self.args.output_dir, 'checkpoint-{}'.format(step))

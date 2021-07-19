@@ -10,11 +10,15 @@ from cblue.utils import load_json, load_dict, write_dict, str_q2b, format_json
 
 
 class EEDataProcessor(object):
-    def __init__(self, root, is_lower=True, no_entity_label='O', test_max_length=60):
+    def __init__(self, root, test_file_path, is_lower=True, no_entity_label='O', test_max_length=30, test_file_dir='testData'):
         self.task_data_dir = os.path.join(root, 'CMeEE')
         self.train_path = os.path.join(self.task_data_dir, 'CMeEE_train.json')
         self.dev_path = os.path.join(self.task_data_dir, 'CMeEE_dev.json')
-        self.test_path = os.path.join(self.task_data_dir, 'CMeEE_test.json')
+        # self.test_path = os.path.join(self.task_data_dir, 'CMeEE_test.json')
+        self.test_file_path = test_file_path
+        self.test_file_dir = test_file_dir
+        # self.test_path = os.path.join(self.task_data_dir, self.test_file_path)
+        self.test_path = os.path.join(self.test_file_dir, self.test_file_path)
 
         self.label_map_cache_path = os.path.join(self.task_data_dir, 'CMeEE_label_map.dict')
         self.label2id = None
@@ -72,7 +76,9 @@ class EEDataProcessor(object):
         start_idx = 0
         for i in list(set(sep_idx_mask))[1:]:
             end_idx = sep_idx[sep_idx_mask.index(i)]
-            data_trunc.append({'text': data[start_idx: end_idx], 'hash': hash(data), 'origin_text': data})
+            subseq = data[start_idx: end_idx]
+            if len(subseq) > 0:
+                data_trunc.append({'text': data[start_idx: end_idx], 'hash': hash(data), 'origin_text': data})
             start_idx = end_idx + 1
         if start_idx < len(data):
             data_trunc.append({'text': data[start_idx:], 'hash': hash(data), 'origin_text': data})

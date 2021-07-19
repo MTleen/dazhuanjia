@@ -16,6 +16,7 @@ MODEL_DIR="data/model_data"
 MODEL_NAME="roberta-wwm-ext"
 OUTPUT_DIR="data/output"
 RESULT_OUTPUT_DIR="data/result_output"
+TEST_FILE_PATH="shdx_guke_fangdajb_clean_10.json"
 
 MAX_LENGTH=128
 
@@ -33,6 +34,7 @@ if [ $# == 0 ]; then
         --do_train \
         --max_length=${MAX_LENGTH} \
         --train_batch_size=32 \
+        --test_file_path=${TEST_FILE_PATH} \
         --eval_batch_size=32 \
         --learning_rate=3e-5 \
         --epochs=10 \
@@ -47,6 +49,7 @@ elif [ $1 == "predict" ]; then
         --model_type=${MODEL_TYPE} \
         --model_name=${MODEL_NAME} \
         --model_dir=${MODEL_DIR} \
+        --test_file_path=${TEST_FILE_PATH} \
         --task_name=${TASK_NAME} \
         --output_dir=${OUTPUT_DIR} \
         --result_output_dir=${RESULT_OUTPUT_DIR} \

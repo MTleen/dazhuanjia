@@ -87,30 +87,30 @@ def main():
         args.model_type = 'albert'
     tokenizer_class, model_class = MODEL_CLASS[args.model_type]
 
-    # phase 1
-    # ER process
-    tokenizer = tokenizer_class.from_pretrained(os.path.join(args.output_dir, 'er'))
+    # # phase 1
+    # # ER process
+    # tokenizer = tokenizer_class.from_pretrained(os.path.join(args.output_dir, 'er'))
     
-    ngram_dict = None
-    if args.model_type == 'zen':
-        ngram_dict = ZenNgramDict(os.path.join(args.model_dir, args.model_name), tokenizer=tokenizer)
+    # ngram_dict = None
+    # if args.model_type == 'zen':
+    #     ngram_dict = ZenNgramDict(os.path.join(args.model_dir, args.model_name), tokenizer=tokenizer)
     
-    data_processor = ERDataProcessor(root=args.data_dir)
-    test_samples = data_processor.get_test_sample()
-    test_dataset = ERDataset(test_samples, data_processor=data_processor, tokenizer=tokenizer,
-                             mode='test', max_length=args.max_length, ngram_dict=ngram_dict,
-                             model_type=args.model_type)
-    model = ERModel(model_class, encoder_path=os.path.join(args.output_dir, 'er'))
-    model.load_state_dict(torch.load(os.path.join(args.output_dir, 'pytorch_model_er.pt')))
-    trainer = ERTrainer(args=args, model=model, data_processor=data_processor,
-                        tokenizer=tokenizer, logger=logger, model_class=ERModel, ngram_dict=ngram_dict)
+    # data_processor = ERDataProcessor(root=args.data_dir)
+    # test_samples = data_processor.get_test_sample()
+    # test_dataset = ERDataset(test_samples, data_processor=data_processor, tokenizer=tokenizer,
+    #                          mode='test', max_length=args.max_length, ngram_dict=ngram_dict,
+    #                          model_type=args.model_type)
+    # model = ERModel(model_class, encoder_path=os.path.join(args.output_dir, 'er'))
+    # model.load_state_dict(torch.load(os.path.join(args.output_dir, 'pytorch_model_er.pt')))
+    # trainer = ERTrainer(args=args, model=model, data_processor=data_processor,
+    #                     tokenizer=tokenizer, logger=logger, model_class=ERModel, ngram_dict=ngram_dict)
     
-    trainer.predict(test_dataset, model)
+    # trainer.predict(test_dataset, model)
 
-    # phase 2
-    json_union(os.path.join('./data/output/ie/robert_base', 'CMeIE_test.json'), os.path.join('./data/result_output', 'CMeEE_test_NER.json'), os.path.join('./data/output/ie/robert_base', 'CMeRE_test.json'))
-    os.remove(os.path.join('./data/output/ie/robert_base', 'CMeIE_test.json'))
-    os.rename(os.path.join('./data/output/ie/robert_base', 'CMeRE_test.json'), os.path.join('./data/output/ie/robert_base', 'CMeIE_test.json'))
+    # # phase 2
+    # json_union(os.path.join('./data/output/ie/robert_base', 'CMeIE_test.json'), os.path.join('./data/result_output', 'CMeEE_test_NER.json'), os.path.join('./data/output/ie/robert_base', 'CMeRE_test.json'))
+    # os.remove(os.path.join('./data/output/ie/robert_base', 'CMeIE_test.json'))
+    # os.rename(os.path.join('./data/output/ie/robert_base', 'CMeRE_test.json'), os.path.join('./data/output/ie/robert_base', 'CMeIE_test.json'))
 
     # phase 3 RE
     tokenizer = tokenizer_class.from_pretrained(os.path.join(args.output_dir, 're'))

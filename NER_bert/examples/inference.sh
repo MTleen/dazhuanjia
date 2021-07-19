@@ -17,22 +17,22 @@ MAX_LENGTH=128
 
 
 
-echo "Start running EE"
-# EE
-python baselines/run_classifier.py \
-        --data_dir=${DATA_DIR} \
-        --model_type=${MODEL_TYPE_EE} \
-        --model_name=${MODEL_NAME_EE} \
-        --model_dir=${MODEL_DIR} \
-        --task_name=${TASK_NAME_EE} \
-        --output_dir=${OUTPUT_DIR} \
-        --result_output_dir=${RESULT_OUTPUT_DIR} \
-        --do_predict \
-        --max_length=${MAX_LENGTH} \
-        --eval_batch_size=32 \
-        --seed=2021
+# echo "Start running EE"
+# # EE
+# python baselines/run_classifier.py \
+#         --data_dir=${DATA_DIR} \
+#         --model_type=${MODEL_TYPE_EE} \
+#         --model_name=${MODEL_NAME_EE} \
+#         --model_dir=${MODEL_DIR} \
+#         --task_name=${TASK_NAME_EE} \
+#         --output_dir=${OUTPUT_DIR} \
+#         --result_output_dir=${RESULT_OUTPUT_DIR} \
+#         --do_predict \
+#         --max_length=${MAX_LENGTH} \
+#         --eval_batch_size=32 \
+#         --seed=2021
 
-echo "Start running IE"
+# echo "Start running IE"
 # IE
 python baselines/inference.py \
     --data_dir=${DATA_DIR} \

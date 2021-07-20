@@ -75,13 +75,15 @@ class EEDataProcessor(object):
         data_trunc = []
         start_idx = 0
         for i in list(set(sep_idx_mask))[1:]:
-            end_idx = sep_idx[sep_idx_mask.index(i)]
+            end_idx = sep_idx[sep_idx_mask.index(i)] + 1
             subseq = data[start_idx: end_idx]
             if len(subseq) > 0:
-                data_trunc.append({'text': data[start_idx: end_idx], 'hash': hash(data), 'origin_text': data})
-            start_idx = end_idx + 1
+                # data_trunc.append({'text': data[start_idx: end_idx], 'hash': hash(data), 'origin_text': data})
+                data_trunc.append({'text': data[start_idx: end_idx], 'hash': hash(data)})
+            start_idx = end_idx
         if start_idx < len(data):
-            data_trunc.append({'text': data[start_idx:], 'hash': hash(data), 'origin_text': data})
+            # data_trunc.append({'text': data[start_idx:], 'hash': hash(data), 'origin_text': data})
+            data_trunc.append({'text': data[start_idx:], 'hash': hash(data)})
         return data_trunc
 
     def _pre_process(self, path, is_predict):
@@ -98,8 +100,8 @@ class EEDataProcessor(object):
             samples = load_json(path)
             assert isinstance(samples, list)
         except Exception as e:
-            format_json(path)
-            samples = load_json(path)
+            samples = format_json(path)
+            # samples = load_json(path)
 
         for data in samples:
             if is_predict:

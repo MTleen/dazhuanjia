@@ -1,8 +1,11 @@
 import os
 import json
+from threading import ThreadError
 import numpy as np
 import torch
+from torch._C import device
 import torch.nn as nn
+from torch.nn import functional as F
 from transformers import AdamW, get_linear_schedule_with_warmup
 from torch.utils.data import Dataset, DataLoader
 
@@ -12,6 +15,75 @@ from cblue.metrics import sts_metric, qic_metric, qqr_metric, qtr_metric, \
 from cblue.metrics import sts_commit_prediction, qic_commit_prediction, qtr_commit_prediction, \
     qqr_commit_prediction, ctc_commit_prediction, ee_commit_prediction, cdn_commit_prediction
 from cblue.models import convert_examples_to_features, save_zen_model
+
+
+class FocalLoss(nn.Module):
+    def __init__(self, args, alpha=0.25, gamma=2, num_classes=5, size_average=True):
+        super(FocalLoss, self).__init__()
+        self.args = args
+        self.size_average = size_average
+        if isinstance(alpha, (float, int)):    #仅仅设置第一类别的权重
+            self.alpha = torch.zeros(num_classes)
+            self.alpha[0] += alpha
+            self.alpha[1:] += (1 - alpha)
+        if isinstance(alpha, list):  #全部权重自己设置
+            self.alpha = torch.Tensor(alpha)
+        self.alpha = self.alpha.to(self.args.device)
+        self.gamma = gamma
+
+    def forward(self, inputs, targets):
+        '''
+        Args:
+            inputs: logits
+            targets: labels
+        '''
+        alpha = self.alpha
+        # print('alpha:', alpha)
+        B = inputs.size(0)
+        N = inputs.size(1)
+        C = inputs.size(2)
+        P = F.softmax(inputs,dim=2)
+        # print('probabilities:', P)
+        alpha = alpha.view(1, -1).expand_as(P)
+        # ---------one hot start--------------#
+        class_mask = inputs.data.new(B, N, C+1).fill_(0.)  # 生成和input一样shape的tensor
+        # print('依照input shape制作:class_mask\n', class_mask.size())
+        # class_mask = class_mask.requires_grad_()  # 需要更新， 所以加入梯度计算
+
+        targets[targets==-100] = -1
+        ids = targets.view(B, -1, 1)  # 取得目标的索引
+        # print('取得targets的索引\n', ids)
+        ids_0 = torch.unsqueeze(torch.arange(0, B).view(-1, 1).expand(B, N), dim=-1)
+        ids_1 = torch.arange(0, N).view(-1, 1).expand(B, N, 1)
+
+        class_mask[ids_0, ids_1, ids] = 1.
+        # class_mask.data.scatter_(-1, ids.data, 1.)  # 利用scatter将索引丢给mask
+        class_mask = class_mask[:, :, :-1]
+        # print(class_mask.size())
+        # print('targets的one_hot形式\n', class_mask)  # one-hot target生成
+        # ---------one hot end-------------------#
+        probs = P * class_mask
+        alpha = alpha[probs!=0]
+        probs = probs[probs!=0]
+        
+        # print('留下targets的概率（1的部分），0的部分消除\n', probs)
+        # 将softmax * one_hot 格式，0的部分被消除 留下1的概率， shape = (5, 1), 5就是每个target的概率
+
+        log_p = probs.log()
+        # print('取得对数\n', log_p)
+        # 取得对数
+        loss = torch.pow((1 - probs), self.gamma) * log_p
+        batch_loss = -alpha * loss  # 對應下面公式
+        # print('每一个batch的loss\n', batch_loss)
+        # batch_loss就是取每一个batch的loss值
+
+        # 最终将每一个batch的loss加总后平均
+        if self.size_average:
+            loss = batch_loss.mean()
+        else:
+            loss = batch_loss.sum()
+        # print('loss值为\n', loss)
+        return loss
 
 
 class Trainer(object):
@@ -25,7 +97,8 @@ class Trainer(object):
             model_class,
             train_dataset=None,
             eval_dataset=None,
-            ngram_dict=None
+            ngram_dict=None,
+            num_labels=5
     ):
 
         self.args = args
@@ -42,6 +115,7 @@ class Trainer(object):
         self.logger = logger
         self.model_class = model_class
         self.ngram_dict = ngram_dict
+        self.num_labels = num_labels
 
     def train(self):
         args = self.args
@@ -67,6 +141,10 @@ class Trainer(object):
         # optimizer = AdamW(model.classifier.weight, lr=args.learning_rate, eps=args.adam_epsilon)
         scheduler = get_linear_schedule_with_warmup(optimizer, num_warmup_steps=num_warmup_steps,
                                                     num_training_steps=num_training_steps)
+        if args.is_focaloss:
+            focal_loss = FocalLoss(args, num_classes=self.num_labels)
+        else:
+            focal_loss = None
 
         # seed_everything(args.seed)
         # model.zero_grad()
@@ -84,7 +162,7 @@ class Trainer(object):
         for i in range(args.epochs):
             pbar = ProgressBar(n_total=len(train_dataloader), desc='Training')
             for step, item in enumerate(train_dataloader):
-                loss = self.training_step(model, item)
+                loss = self.training_step(model, item, focal_loss=focal_loss)
                 pbar(step, {'loss': loss.item()})
 
                 if args.max_grad_norm:
@@ -170,7 +248,8 @@ class EETrainer(Trainer):
             model_class,
             train_dataset=None,
             eval_dataset=None,
-            ngram_dict=None
+            ngram_dict=None,
+            num_labels=5
     ):
         super(EETrainer, self).__init__(
             args=args,
@@ -181,16 +260,18 @@ class EETrainer(Trainer):
             eval_dataset=eval_dataset,
             logger=logger,
             model_class=model_class,
-            ngram_dict=ngram_dict
+            ngram_dict=ngram_dict,
+            num_labels=num_labels
         )
 
-    def training_step(self, model, item):
+    def training_step(self, model, item, focal_loss=None):
         model.train()
 
         input_ids = item[0].to(self.args.device)
         token_type_ids = item[1].to(self.args.device)
         attention_mask = item[2].to(self.args.device)
         labels = item[3].to(self.args.device)
+        # print(labels[0],  labels[0].max(), sum(labels[0] != -100))
 
         if self.args.model_type == 'zen':
             input_ngram_ids = item[4].to(self.args.device)
@@ -205,8 +286,10 @@ class EETrainer(Trainer):
         else:
             outputs = model(labels=labels, input_ids=input_ids, token_type_ids=token_type_ids,
                             attention_mask=attention_mask)
-
-        loss = outputs[0]
+        if focal_loss is not None:
+            loss = focal_loss(outputs.logits, labels)
+        else:
+            loss = outputs[0]
         loss.backward()
 
         return loss.detach()
@@ -266,7 +349,7 @@ class EETrainer(Trainer):
         logger.info("%s-%s precision: %s - recall: %s - f1 score: %s", args.task_name, args.model_name, p, r, f1)
         return f1
 
-    def predict(self, model, test_dataset):
+    def predict(self, model, test_dataset, threshold=0):
         args = self.args
         logger = self.logger
         test_dataloader = self.get_test_dataloader(test_dataset)
@@ -308,6 +391,11 @@ class EETrainer(Trainer):
                     logits = outputs[0].detach()
                 # active_index = (inputs['attention_mask'] == 1).cpu()
                 active_index = attention_mask == 1
+
+                if threshold > 0:
+                    logits = F.softmax(logits, dim=-1) - threshold
+                    logits[logits < 0] = 0.
+
                 preds = logits.argmax(dim=-1).cpu()
 
                 for i in range(len(active_index)):

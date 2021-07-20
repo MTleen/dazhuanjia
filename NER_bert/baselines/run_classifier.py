@@ -1,5 +1,7 @@
 import os
 import sys
+
+from torch.nn.functional import threshold
 sys.path.append('.')
 import argparse
 import torch
@@ -11,7 +13,7 @@ from cblue.data import STSDataProcessor, STSDataset, QICDataset, QICDataProcesso
 from cblue.trainer import STSTrainer, QICTrainer, QQRTrainer, QTRTrainer, CTCTrainer, EETrainer
 from cblue.utils import init_logger, seed_everything
 from cblue.models import ZenConfig, ZenNgramDict, ZenForSequenceClassification, ZenForTokenClassification
-
+from cblue.trainer.train import FocalLoss
 
 TASK_DATASET_CLASS = {
     'ee': (EEDataset, EEDataProcessor),
@@ -52,7 +54,7 @@ def main():
                         help="The task data directory.")
     parser.add_argument("--model_dir", default=None, type=str, required=True,
                         help="The directory of pretrained models")
-    parser.add_argument("--test_file_path", default=None, type=str, required=True,
+    parser.add_argument("--test_file_path", default=None, type=str, required=False,
                         help="The directory of test data")
     parser.add_argument("--test_file_dir", default='testData', type=str, required=False, help="The directory of test data")
     parser.add_argument("--model_type", default=None, type=str, required=True,
@@ -65,6 +67,7 @@ def main():
                         help="The path of result data and models to be saved.")
     parser.add_argument("--do_train", action='store_true',
                         help="Whether to run training.")
+    parser.add_argument("--is_focaloss", action='store_true')
     parser.add_argument("--do_predict", action='store_true',
                         help="Whether to run the models in inference mode on the test set.")
     parser.add_argument("--result_output_dir", default=None, type=str, required=True,
@@ -99,6 +102,7 @@ def main():
                         help="Save checkpoint every X updates steps.")
     parser.add_argument('--seed', type=int, default=2021,
                         help="random seed for initialization")
+    parser.add_argument('--threshold', type=float, default=0.)
 
     args = parser.parse_args()
 
@@ -156,13 +160,9 @@ def main():
         model = model_class.from_pretrained(os.path.join(args.model_dir, args.model_name),
                                             num_labels=data_processor.num_labels)
 
-        # model = model_class.from_pretrained(
-        # f'hfl/chinese-{args.model_name}',
-        # num_labels=data_processor.num_labels)
-
         trainer = trainer_class(args=args, model=model, data_processor=data_processor,
                                 tokenizer=tokenizer, train_dataset=train_dataset, eval_dataset=eval_dataset,
-                                logger=logger, model_class=model_class, ngram_dict=ngram_dict)
+                                logger=logger, model_class=model_class, ngram_dict=ngram_dict, num_labels=data_processor.num_labels)
 
         global_step, best_step = trainer.train()
 
@@ -187,7 +187,7 @@ def main():
         #     f'hfl/{args.model_name}', num_labels=data_processor.num_labels)
         trainer = trainer_class(args=args, model=model, data_processor=data_processor,
                                 tokenizer=tokenizer, logger=logger, model_class=model_class, ngram_dict=ngram_dict)
-        trainer.predict(test_dataset=test_dataset, model=model)
+        trainer.predict(test_dataset=test_dataset, model=model, threshold=args.threshold)
 
 
 if __name__ == '__main__':

@@ -82,10 +82,15 @@ def ctc_commit_prediction(dataset, preds, output_dir, id2label):
 def ee_commit_prediction(dataset, preds, output_dir, file_name):
     orig_text = dataset.orig_text
     #  原始语料无需分片
-    # pred_result = []
-    # for item in zip(orig_text, preds):
-    #     tmp_dict = {'text': item[0], 'entities': item[1]}
-    #     pred_result.append(tmp_dict)
+    pred_result_seg = []
+    for item in zip(orig_text, preds):
+        tmp_dict = {'orig_info': item[0], 'entities': item[1]}
+        pred_result_seg.append(tmp_dict)
+    
+    print('输出各子句 NER json')
+    with open(os.path.join(output_dir, 'seg_NER_' + file_name), 'w', encoding='utf-8') as f:
+        f.write(json.dumps(pred_result_seg, indent=2, ensure_ascii=False))
+    
     # 原始语料分片
     pred_result = []
     pred_res_dict = {}
@@ -100,16 +105,17 @@ def ee_commit_prediction(dataset, preds, output_dir, file_name):
                     e['start_idx'] += len(pred_res_dict[hash_val]['text']) + 1
                     e['end_idx'] += len(pred_res_dict[hash_val]['text']) + 1
 
-            pred_res_dict[hash_val]['text'] += '|' + tmp_dict['text']
+            pred_res_dict[hash_val]['text'] += tmp_dict['text']
             pred_res_dict[hash_val]['entities'] += tmp_dict['entities']
         else:
             pred_res_dict[hash_val] = tmp_dict
-    # 将最终文本替换成原始文本
-    for item in orig_text:
-        pred_res_dict[item['hash']]['text'] = item['origin_text']
+    # # 将最终文本替换成原始文本
+    # for item in orig_text:
+    #     pred_res_dict[item['hash']]['text'] = item['origin_text']
     # pred_result.append(tmp_dict)
     pred_result = list(pred_res_dict.values())
-    # with open(os.path.join(output_dir, 'CMeEE_test.json'), 'w', encoding='utf-8') as f:
+
+
     print('输出 NER json')
     with open(os.path.join(output_dir, 'NER_' + file_name), 'w', encoding='utf-8') as f:
         f.write(json.dumps(pred_result, indent=2, ensure_ascii=False))

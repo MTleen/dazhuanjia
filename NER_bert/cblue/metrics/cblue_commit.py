@@ -1,8 +1,9 @@
 import os
 import json
-import xlrd
-import xlwt
+# import xlrd
+# import xlwt
 import numpy as np
+from tools.json2exl import json2xls
 
 
 def sts_commit_prediction(dataset, preds, output_dir, id2label):
@@ -121,79 +122,78 @@ def ee_commit_prediction(dataset, preds, output_dir, file_name):
         f.write(json.dumps(pred_result, indent=2, ensure_ascii=False))
 
     # 输出主客体
-    with open(os.path.join(output_dir, 'SubObj_' + file_name),
-              'w',
-              encoding='utf-8') as f:
-        for l in pred_result:
-            re_res = {'text':'', 'sub_list': [], 'obj_list': []}
-            re_res['text'] = l['text']
-            for e in l['entities']:
-                if e['type'] == 'dis':
-                    re_res['sub_list'].append(e['entity'])
-                else:
-                    re_res['obj_list'].append(e['entity'])
-            f.write(json.dumps(re_res, ensure_ascii=False) + '\n')
+    # with open(os.path.join(output_dir, 'SubObj_' + file_name),
+    #           'w',
+    #           encoding='utf-8') as f:
+    #     for l in pred_result:
+    #         re_res = {'text':'', 'sub_list': [], 'obj_list': []}
+    #         re_res['text'] = l['text']
+    #         for e in l['entities']:
+    #             if e['type'] == 'dis':
+    #                 re_res['sub_list'].append(e['entity'])
+    #             else:
+    #                 re_res['obj_list'].append(e['entity'])
+    #         f.write(json.dumps(re_res, ensure_ascii=False) + '\n')
 
     # 输出 excel
     print('输出 NER excel')
     json2xls('NER_' + os.path.splitext(file_name)[0], pred_result)
 
-def json2xls(file_name, lines):
-    # print(lines)
-    workbook = xlwt.Workbook()
+# def json2xls(file_name, lines, flag=0):
+#     # print(lines)
+#     workbook = xlwt.Workbook()
 
-    RESULT_PATH = './data/result_output'
-    RESULT_NAME = file_name
+#     RESULT_PATH = './data/result_output'
+#     RESULT_NAME = file_name
 
-    cls2type = {
-        'bod': '身体部分',
-        'pro': '医疗程序',
-        'dis': '疾病',
-        'sym': '临床表现',
-        'equ': '医疗设备',
-        'dru': '药物',
-        'ite': '医学检验项目',
-        'dep': '科室',
-        'mic': '微生物类',
-        'sur': '手术'
-    }
+#     cls2type = {
+#         'bod': '身体部分',
+#         'pro': '医疗程序',
+#         'dis': '疾病',
+#         'sym': '临床表现',
+#         'equ': '医疗设备',
+#         'dru': '药物',
+#         'ite': '医学检验项目',
+#         'dep': '科室',
+#         'mic': '微生物类',
+#         'sur': '手术'
+#     }
 
-    flag = 0
-    if flag:
-        RESULT_NAME += '_test_noempty.xls'
-    else:
-        RESULT_NAME += '_test_withempty.xls'
-    max_num_persheet = 100
-    sheet_count = len(lines) // max_num_persheet + 1
-    worksheet_l = [workbook.add_sheet(f'NER_{i+1}') for i in range(sheet_count)]
-    # worksheet = workbook.add_sheet('test')
-    for i, worksheet in enumerate(worksheet_l):
-        print('current sheet:', i)
-        count = 1
-        for j, value in enumerate(['原始病历', '实体类型', '医疗实体']): #写表头 
-            #print(value) 
-            worksheet.write(0, j, value)
-        for line in range(i * max_num_persheet, (i+1) * max_num_persheet):
-            if line < len(lines):
-                json_data = lines[line]
-            else:
-                break
-            if flag == 1 and len(json_data['entities']) <= 0:
-                pass
-            else:
-                end = count + len(json_data['entities']) - 1
-                if end < count:
-                    end = count
-                worksheet.write_merge(count, end, 0, 0, json_data['text'])
-                worksheet.write_merge(end + 1, end + 1, 0, 3, ' ')
+#     if flag:
+#         RESULT_NAME += '_noempty.xls'
+#     else:
+#         RESULT_NAME += '_withempty.xls'
+#     max_num_persheet = 100
+#     sheet_count = len(lines) // max_num_persheet + 1
+#     worksheet_l = [workbook.add_sheet(f'NER_{i+1}') for i in range(sheet_count)]
+#     # worksheet = workbook.add_sheet('test')
+#     for i, worksheet in enumerate(worksheet_l):
+#         print('current sheet:', i)
+#         count = 1
+#         for j, value in enumerate(['原始病历', '实体类型', '医疗实体']): #写表头 
+#             #print(value) 
+#             worksheet.write(0, j, value)
+#         for line in range(i * max_num_persheet, (i+1) * max_num_persheet):
+#             if line < len(lines):
+#                 json_data = lines[line]
+#             else:
+#                 break
+#             if flag == 1 and len(json_data['entities']) <= 0:
+#                 pass
+#             else:
+#                 end = count + len(json_data['entities']) - 1
+#                 if end < count:
+#                     end = count
+#                 worksheet.write_merge(count, end, 0, 0, json_data['text'])
+#                 worksheet.write_merge(end + 1, end + 1, 0, 3, ' ')
 
-            for spo in json_data['entities']:
-                worksheet.write(count + json_data['entities'].index(spo), 1, cls2type[spo['type']])
-                worksheet.write(count + json_data['entities'].index(spo), 2, spo['entity'])
+#             for spo in json_data['entities']:
+#                 worksheet.write(count + json_data['entities'].index(spo), 1, cls2type[spo['type']])
+#                 worksheet.write(count + json_data['entities'].index(spo), 2, spo['entity'])
 
-            count = end + 2
+#             count = end + 2
 
-    workbook.save(os.path.join(RESULT_PATH, RESULT_NAME))
+#     workbook.save(os.path.join(RESULT_PATH, RESULT_NAME))
 
 
 def cdn_commit_prediction(text, preds, num_preds, recall_labels, recall_scores, output_dir, id2label):

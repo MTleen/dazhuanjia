@@ -23,7 +23,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--file_name', default=['shdx_guke_fangdajb.json', 'shdx_guke_ptjb.json', 'shdx_xiaohua_fangdajb.json', 'shdx_xiaohua_ptjb.json'], required=False, nargs='+')
     parser.add_argument('--data_dir', default='testData', type=str, required=False)
-    parser.add_argument('--max_len', default=10, type=int, required=False)
+    parser.add_argument('--max_len', default=20, type=int, required=False)
     args = parser.parse_args()
 
     file_name = args.file_name
